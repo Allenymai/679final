@@ -1,0 +1,537 @@
+---
+title: "MA679 Final Project DATA Cleaning"
+output:
+  html_document:
+    df_print: paged
+author: "Ruicheng Zhang, Yingmai Chen, Yang Xiao"
+date: "2024-04-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(plotly)
+library(tidyr)
+```
+
+# EDA
+```{r}
+data <- read.csv("/restricted/projectnb/ma679/ProcessedData/rz2n/data_new.csv")
+
+```
+
+
+```{r}
+ #Group and summarize data
+data_grouped <- data %>%
+  group_by(AGE, FEMALE) %>%
+  summarise(AvgReturn30 = mean(return30, na.rm = TRUE), .groups = 'drop')
+
+# Convert FEMALE to factor for proper grouping in ggplot
+data_grouped$FEMALE <- as.factor(data_grouped$FEMALE)
+
+# Create bar plot using ggplot2
+ggplot(data_grouped, aes(x = AGE, y = AvgReturn30, fill = FEMALE)) +
+  geom_bar(stat = "identity", position = position_dodge()) +
+  scale_fill_manual(values = c('pink', 'blue')) +
+  labs(title = "Age vs. Probability to return by Gender",
+       x = "Age",
+       y = "Return Probability",
+       fill = "Gender") +
+  theme_minimal()
+
+
+
+```
+
+```{r}
+ggplot(data, aes(y = AGE, x = return30, fill = return30)) +
+  geom_boxplot() +
+  labs(title = "Age Distribution by Return30 Status",
+       x = "Return30",
+       y = "Age") +
+  scale_fill_manual(values = c('pink', 'blue')) +
+  theme_minimal()
+
+
+```
+
+```{r}
+data_grouped <- data %>%
+  filter(return30 == 1) %>%
+  group_by(DMONTH) %>%
+  summarise(ReturnCount = n(), .groups = 'drop')
+
+# Ensure all months are present in the grouping
+all_months <- data.frame(DMONTH = 1:12)
+data_grouped <- merge(all_months, data_grouped, by = "DMONTH", all.x = TRUE)
+data_grouped$ReturnCount[is.na(data_grouped$ReturnCount)] <- 0
+
+# Create bar plot using ggplot2
+ggplot(data_grouped, aes(x = factor(DMONTH, levels = 1:12), y = ReturnCount)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(title = "Return30 Counts by Month",
+       x = "Month",
+       y = "Return30 Count") +
+  theme_minimal()
+
+
+
+```
+
+### Data input
+```{r}
+data <- read.csv("/restricted/projectnb/ma679/Data/NRD_2019_Core.CSV")
+colnames(data) <- c(
+  "AGE","AWEEKEND","DIED","DISCWT","DISPUNIFORM","DMONTH","DQTR","DRG","DRGVER","DRG_NoPOA","I10_DX1","I10_DX2","I10_DX3","I10_DX4","I10_DX5","I10_DX6","I10_DX7","I10_DX8","I10_DX9","I10_DX10","I10_DX11","I10_DX12","I10_DX13","I10_DX14","I10_DX15","I10_DX16","I10_DX17","I10_DX18","I10_DX19","I10_DX20","I10_DX21","I10_DX22","I10_DX23","I10_DX24","I10_DX25","I10_DX26","I10_DX27","I10_DX28","I10_DX29","I10_DX30","I10_DX31","I10_DX32","I10_DX33","I10_DX34","I10_DX35","I10_DX36","I10_DX37","I10_DX38","I10_DX39","I10_DX40","ELECTIVE","FEMALE","HCUP_ED","HOSP_NRD","KEY_NRD","LOS","MDC","MDC_NoPOA","I10_BIRTH","I10_DELIVERY","I10_INJURY","I10_MULTINJURY","I10_SERVICELINE","I10_NDX","I10_NPR","NRD_DaysToEvent","NRD_STRATUM","NRD_VisitLink","PAY1","PCLASS_ORPROC","PL_NCHS","I10_PR1","I10_PR2","I10_PR3","I10_PR4","I10_PR5","I10_PR6","I10_PR7","I10_PR8","I10_PR9","I10_PR10","I10_PR11","I10_PR12","I10_PR13","I10_PR14","I10_PR15","I10_PR16","I10_PR17","I10_PR18","I10_PR19","I10_PR20","I10_PR21","I10_PR22","I10_PR23","I10_PR24","I10_PR25","PRDAY1","PRDAY2","PRDAY3","PRDAY4","PRDAY5","PRDAY6","PRDAY7","PRDAY8","PRDAY9","PRDAY10","PRDAY11","PRDAY12","PRDAY13","PRDAY14","PRDAY15","PRDAY16","PRDAY17","PRDAY18","PRDAY19","PRDAY20","PRDAY21","PRDAY22","PRDAY23","PRDAY24","PRDAY25","REHABTRANSFER","RESIDENT","SAMEDAYEVENT","TOTCHG","YEAR","ZIPINC_QRTL"
+)
+
+
+
+# 筛选出具有相同NRD_VisitLink且至少有一个died为1的行
+selected_data <- data[data$DIED == 1, ]
+unique_NRD_VisitLink <- unique(selected_data$NRD_VisitLink)
+
+
+#data1 <- data[data$NRD_VisitLink %in% unique_NRD_VisitLink, ]
+data2 <- data[!data$NRD_VisitLink %in% unique_NRD_VisitLink, ]
+#data1 <- data1[order(data1$NRD_VisitLink), ]
+data2 <- data2[order(data2$NRD_VisitLink), ]
+
+# head(data1)
+# head(data2)
+
+```
+
+### Data Processing
+
+```{r}
+data3 <- data2 %>%
+  select(-c(DISCWT, DISPUNIFORM, DQTR, DRG, DRGVER, DRG_NoPOA, HCUP_ED, 
+            HOSP_NRD, KEY_NRD, MDC_NoPOA, PCLASS_ORPROC, NRD_STRATUM))
+df_sorted <- data3 %>%
+  arrange(NRD_VisitLink, NRD_DaysToEvent)
+
+```
+
+
+# Calculate return days 
+```{r}
+
+df2 <- df_sorted %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(
+    next_NRD_DaysToEvent = lead(NRD_DaysToEvent),
+    return =ifelse(is.na(next_NRD_DaysToEvent) | n() == 1, NA, next_NRD_DaysToEvent - NRD_DaysToEvent - LOS)
+  ) %>%
+  ungroup()
+```
+
+```{r}
+df <- df2 %>%
+  group_by(NRD_VisitLink) %>%
+  mutate(Count = n()) %>%
+  filter(Count == 1 |!(Count > 1 & row_number() == Count)) %>%
+  select(-Count) %>% 
+  select(-next_NRD_DaysToEvent)
+
+
+```
+
+```{r}
+#summary(df)
+#AGE >0
+#AWEEKEND (0,1)
+#DIED (0,1)
+#DMONTH (1,12)
+#ELECTIVE (0,1)
+#FEMALE (0,1)
+#LOS
+#MDC   
+#I10_BIRTH
+#I10_DELIVERY (0,1)
+#I10_INJURY (0,2)
+#I10_MULTINJURY (0,1)
+#I10_SERVICELINE (1,5)
+#I10_NDX 
+#I10_NPR
+#NRD_DaysToEvent
+#NRD_VisitLink
+#PAY1  (1-6)
+#PL_NCHS (1-6)
+#REHABTRANSFER(只要0)
+#RESIDENT (0,1)
+#SAMEDAYEVENT
+#TOTCHG (100-10,000,000)
+#YEAR
+#ZIPINC_QRTL(只留1,2,3,4，数字越大越富)
+
+```
+
+
+```{r}
+# all_chars <- c()
+# 
+# 
+# columns <- paste0("I10_PR", 1:25)
+# 
+# 
+# for (col in columns) {
+#   char_extracted <- sapply(df[[col]], function(x) {
+#     if (nchar(x) >= 3) {
+#       substr(x, 1, 3)
+#     } else {
+#       x
+#     }
+#   })
+#   all_chars <- c(all_chars, char_extracted)
+# }
+# 
+# char_counts <- data.frame(chars = all_chars) %>%
+#   group_by(chars) %>%
+#   summarise(count = n(), .groups = 'drop') %>%
+#   arrange(desc(count))
+```
+
+```{r}
+
+# top_chars <- head(char_counts, 5)
+# 
+# print(top_chars)
+```
+
+```{r}
+
+# all_chars <- c()
+# 
+# 
+# columns <- paste0("I10_DX", 1:40)
+# 
+# 
+# for (col in columns) {
+#   char_extracted <- sapply(df[[col]], function(x) {
+#     if (nchar(x) >= 3) {
+#       substr(x, 1, 3)
+#     } else {
+#       x
+#     }
+#   })
+#   all_chars <- c(all_chars, char_extracted)
+# }
+# 
+# 
+# char_counts <- data.frame(chars = all_chars) %>%
+#   group_by(chars) %>%
+#   summarise(count = n(), .groups = 'drop') %>%
+#   arrange(desc(count))
+```
+
+```{r}
+# 
+# top_chars <- head(char_counts, 5)
+# 
+# print(top_chars)
+```
+
+```{r}
+pr_columns <- paste0("I10_PR", 1:25)
+dx_columns <- paste0("I10_DX", 1:40)
+
+# 筛选出"I10_PR"列中前三位为"3E0"的数据
+pr_filtered <- df %>%
+  filter(if_any(all_of(pr_columns), ~ substr(.x, 1, 3) == "3E0"))
+
+# 筛选出"I10_DX"列中前三位为"Z79"的数据
+dx_filtered <- df %>%
+  filter(if_any(all_of(dx_columns), ~ substr(.x, 1, 3) == "Z79"))
+
+# 合并两个筛选结果，移除重复的行
+combined_filtered <- distinct(bind_rows(pr_filtered, dx_filtered))
+
+#print(combined_filtered)
+```
+
+```{r}
+# pr_columns <- paste0("I10_PR", 1:25)
+# 
+# # 提取以"3E0"开头的数据，并统计每种数据的出现次数
+# data_3E0 <- combined_filtered %>%
+#   select(all_of(pr_columns)) %>%  # 选择PR相关的列
+#   pivot_longer(cols = everything(), values_to = "code") %>%  # 转换为长格式以便处理
+#   filter(substr(code, 1, 3) == "3E0") %>%  # 筛选出以"3E0"开头的代码
+#   count(code, name = "frequency", sort = TRUE)  # 计数并按频率排序
+# print(data_3E0)
+
+
+```
+
+```{r}
+# dx_columns <- paste0("I10_DX", 1:40)
+# 
+# # 提取以"Z79"开头的数据，并统计每种数据的出现次数
+# data_Z79 <- combined_filtered %>%
+#   select(all_of(dx_columns)) %>%  # 选择DX相关的列
+#   pivot_longer(cols = everything(), values_to = "code") %>%  # 转换为长格式以便处理
+#   filter(substr(code, 1, 3) == "Z79") %>%  # 筛选出以"Z79"开头的代码
+#   count(code, name = "frequency", sort = TRUE)  # 计数并按频率排序
+```
+```{r}
+#print(data_Z79)
+
+```
+
+```{r}
+pr_columns <- paste0("I10_PR", 1:25)
+dx_columns <- paste0("I10_DX", 1:40)
+
+# 定义筛选条件
+pr_codes <- c("3E0R3NZ", "3E0234Z", "3E033VJ", "3E0P7VZ", "3E0T3BZ")
+dx_codes <- c("Z7982", "Z79899", "Z794", "Z7984", "Z7901", "Z7902", "Z7951", "Z79891", "Z791", "Z7952")
+
+# 应用筛选条件
+pr_filtered <- combined_filtered %>%
+  filter(if_any(all_of(pr_columns), ~ substr(.x, 1, 7) %in% pr_codes))
+
+dx_filtered <- combined_filtered %>%
+  filter(if_any(all_of(dx_columns), ~ substr(.x, 1, 5) %in% dx_codes))
+
+# 合并两个筛选结果，移除重复的行
+final_filtered <- distinct(bind_rows(pr_filtered, dx_filtered))
+
+# 打印结果
+#print(final_filtered)
+```
+
+```{r}
+pr_target_columns <- paste("I10_PR", 1:25, sep="")
+pr_new_columns <- c("3E0R3NZ", "3E0234Z", "3E033VJ", "3E0P7VZ", "3E0T3BZ")
+
+# 定义DX相关的列名和新列名
+dx_target_columns <- paste("I10_DX", 1:40, sep="")
+dx_new_columns <- c("Z7982", "Z79899", "Z794", "Z7984", "Z7901", "Z7902", "Z7951", "Z79891", "Z791", "Z7952")
+
+# 添加新列，默认值为0
+final_filtered[pr_new_columns] <- 0
+final_filtered[dx_new_columns] <- 0
+
+# 更新PR列
+for (new_col in pr_new_columns) {
+  final_filtered[[new_col]] <- as.integer(rowSums(final_filtered[pr_target_columns] == new_col, na.rm = TRUE) > 0)
+}
+
+# 更新DX列
+for (new_col in dx_new_columns) {
+  final_filtered[[new_col]] <- as.integer(rowSums(final_filtered[dx_target_columns] == new_col, na.rm = TRUE) > 0)
+}
+
+# 移除原始的PR和DX列
+dff <- final_filtered %>% 
+  select(-all_of(c(pr_target_columns, dx_target_columns)))
+
+# 查看更新后的数据框
+#print(head(dff))
+```
+
+
+```{r}
+
+
+
+```
+
+
+```{r}
+
+
+
+```
+
+```{r}
+
+
+
+```
+
+# Dealing with NA
+
+
+```{r}
+col <- c("AGE", "AWEEKEND", "DIED", "DMONTH", "ELECTIVE", "FEMALE", 
+         "LOS", "MDC", "I10_BIRTH", "I10_DELIVERY", "I10_INJURY", 
+         "I10_MULTINJURY", "I10_SERVICELINE", "I10_NDX", "I10_NPR", 
+         "NRD_DaysToEvent", "I10_NDX", "I10_NPR", "NRD_VisitLink", 
+         "PAY1", "PL_NCHS", "REHABTRANSFER", "RESIDENT", "SAMEDAYEVENT", 
+         "TOTCHG", "YEAR", "ZIPINC_QRTL")
+```
+
+```{r}
+
+na_matrix <- is.na(dff[, col])
+
+
+rows_to_keep <- !apply(na_matrix, 1, any)
+
+
+df_clean <- dff[rows_to_keep, ]
+
+
+#print(df_clean)
+```
+
+```{r}
+data <- df_clean %>%
+  filter(
+    AGE > 0,
+    AWEEKEND %in% c(0, 1),
+    ELECTIVE %in% c(0, 1),
+    DIED %in% c(0, 1),
+    DMONTH %in% 1:12,
+    FEMALE %in% c(0, 1),
+    LOS >= 0,
+    I10_DELIVERY %in% c(0, 1),
+    I10_INJURY %in% c(0, 1, 2),
+    I10_MULTINJURY %in% c(0, 1),
+    I10_SERVICELINE %in% 1:5,
+    REHABTRANSFER == 0,
+    PAY1 %in% 1:6,
+    PL_NCHS %in% 1:6,
+    RESIDENT %in% c(0, 1),
+    TOTCHG >= 100 & TOTCHG <= 10000000,
+    ZIPINC_QRTL %in% c(1,2,3,4)
+  )
+
+```
+
+```{r}
+data <- data %>%
+  mutate(return30 = if_else(return > 7 & return <= 30, 1, 0, missing = 0))
+```
+
+```{r}
+prday_columns <- paste("PRDAY", 1:25, sep="")
+
+data <- data %>% select(-all_of(prday_columns))
+```
+
+```{r}
+write.csv(data, "/restricted/projectnb/ma679/ProcessedData/rz2n/data_new.csv", row.names = FALSE)
+```
+### Modelling
+```{r}
+#transform
+data$PAY1 <- factor(data$PAY1)
+data$PL_NCHS <- factor(data$PL_NCHS)
+data$I10_INJURY <- factor(data$I10_INJURY)
+data$I10_SERVICELINE <- factor(data$I10_SERVICELINE)
+ 
+#logistic regression model
+model <- glm(return30 ~ AGE + AWEEKEND + ELECTIVE + FEMALE + LOS + I10_DELIVERY + I10_INJURY + I10_MULTINJURY + I10_SERVICELINE + I10_NDX + I10_NPR + PAY1 + PL_NCHS + RESIDENT + TOTCHG + ZIPINC_QRTL, data = data, family = binomial)
+
+summary(model)
+```
+### EDA
+
+```{r}
+data_grouped <- data %>%
+  group_by(AGE, FEMALE) %>%
+  summarise(AvgReturn30 = mean(return30, na.rm = TRUE), .groups = 'drop')
+
+data_grouped$FEMALE <- as.factor(data_grouped$FEMALE)
+
+#bar
+plot_ly(data_grouped, x = ~AGE, y = ~AvgReturn30, type = 'bar', color = ~FEMALE, colors = c('pink', 'blue')) %>%
+  layout(title = "Age vs. Probability to return by Gender",
+         xaxis = list(title = "Age"),
+         yaxis = list(title = "Return Probability"),
+         barmode = 'group')
+```
+
+```{r}
+#box
+plot_ly(data, y = ~AGE, color = ~factor(return30), type = "box") %>%
+  layout(title = "Age Distribution by Return30 Status",
+         xaxis = list(title = "Return30"),
+         yaxis = list(title = "Age"))
+
+```
+
+```{r}
+library(ggplot2)
+
+return_ratio <- data %>%  group_by(ZIPINC_QRTL) %>%  summarize(return_ratio = mean(return30 == 1))
+# bar
+ggplot(return_ratio, aes(x = ZIPINC_QRTL, y = return_ratio)) +  
+  geom_bar(stat = "identity", fill = "skyblue") +
+  geom_text(aes(label = scales::percent(return_ratio, accuracy = 0.1)),
+            vjust = -0.5, 
+            color = "black") + 
+  labs(title = "Proportion of return30 == 1 by ZIPINC_QRTL",
+       x = "ZIPINC_QRTL",
+       y = "Proportion") +  
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+```{r}
+library(ggplot2)
+# bar
+ggplot(data, aes(x=factor(return30))) +
+  geom_bar(fill="steelblue", color="black") +
+  labs(title="Frequency of return30", x="return30 Status", y="Count") +
+  theme_minimal()
+ 
+# pie
+return30_table <- data.frame(table(data$return30))
+names(return30_table) <- c("return30", "Freq")
+
+ggplot(return30_table, aes(x="", y=Freq, fill=factor(return30))) +
+  geom_bar(width=1, stat="identity") +
+  coord_polar(theta="y") +
+  labs(title="Proportion of return30", x=NULL, y=NULL) +
+  theme_void() +
+  scale_fill_brewer(palette="Pastel1", name="return30 Status")
+
+
+ 
+# ROC curve
+library(pROC)
+roc_curve <- roc(data$return30, fitted(model))
+ggroc(roc_curve) +
+  labs(title="ROC Curve for return30 Prediction") +
+  theme_minimal()
+ 
+# Predicted Probabilities Distribution plot
+predicted_probs <- data.frame(Probabilities=predict(model, type="response"))
+
+ggplot(predicted_probs, aes(x=Probabilities)) +
+  geom_histogram(binwidth=0.05, fill="purple", color="black") +
+  labs(title="Predicted Probabilities Distribution", x="Predicted Probability", y="Frequency") +
+  theme_minimal()
+```
+
+
+```{r}
+# residuals
+plot(residuals(model) ~ fitted(model), main="Residuals vs. Fitted Values")
+ 
+# Binned residual plot
+arm::binnedplot(fitted(model),residuals(model,type="response"))
+qqline(residuals(model))
+```
+
+
+```{r}
+#deep netureal net work
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
