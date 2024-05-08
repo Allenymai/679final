@@ -1,4 +1,4 @@
-**Attribution**
+**Attribution:**
 
 Data cleaning and processing : Ruicheng zhang
 
@@ -6,17 +6,17 @@ Modeling and analysis : Yingmai Chen
 
 Report and EDA : Yang Xiao
 
-**Files**
+**Files:**
 
 Data cleaning: Data_cleaning.Rmd
 
 Model and EDA: final3.ipynb
 
-Report:
+Report:Patient_Readmissions_Analysis_Report(1).pdf
 
-Slides:
+Slides:BU_TEMPLATE.pptx
 
-**Abstract**
+**Abstract:**
 
 This report presents a detailed comparative analysis of three machine learning models—
 Gradient Boosting, Neural Networks, and Logistic Regression—applied to predict 30-day
