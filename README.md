@@ -1,4 +1,4 @@
-Attribution
+**Attribution**
 
 Data cleaning and processing : Ruicheng zhang
 
@@ -6,7 +6,7 @@ Modeling and analysis : Yingmai Chen
 
 Report and EDA : Yang Xiao
 
-Files
+**Files**
 
 Data cleaning: Data_cleaning.Rmd
 
@@ -16,7 +16,7 @@ Report:
 
 Slides:
 
-Abstract
+**Abstract**
 
 This report presents a detailed comparative analysis of three machine learning models—
 Gradient Boosting, Neural Networks, and Logistic Regression—applied to predict 30-day
