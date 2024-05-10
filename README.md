@@ -12,9 +12,9 @@ Data cleaning: Data_cleaning.Rmd
 
 Model and EDA: final3.ipynb
 
-Report:Patient_Readmissions_Analysis_Report(1).pdf
+Report:Report.pdf
 
-Slides:BU_TEMPLATE.pptx
+Slides:BU_TEMPLATE(1).pptx
 
 **Abstract:**
 
