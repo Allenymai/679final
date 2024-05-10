@@ -26,4 +26,4 @@ understand and predict the risk factors associated with patient readmissions. Th
 aims to assess the models' effectiveness in terms of accuracy, sensitivity, and specificity, and
 to identify the key predictors that significantly impact readmission outcomes. The analysis
 also explores the strengths and limitations of each model, providing insights into their
-practical implications for healthcare analytics and decision-makin.
+practical implications for healthcare analytics and decision-making.
